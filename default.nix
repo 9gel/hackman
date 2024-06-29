@@ -1,4 +1,4 @@
 let
-  pkgs = import ./pkgs.nix;
+  pkgs = import ./nix/pkgs.nix;
 in
-pkgs.callPackage ./hackman.nix { }
+pkgs.callPackage ./nix/hackman.nix { }

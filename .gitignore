@@ -4,6 +4,7 @@ db.sqlite3
 .cache
 .coverage
 hackman/static/admin
+*.swp
 
 # compiled objects
 *.pyc

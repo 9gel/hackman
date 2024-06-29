@@ -15,6 +15,7 @@
   libusb1,
   libudev-zero,
   poetry,
+  docker,
 }:
 
 let
@@ -22,6 +23,7 @@ let
   sourceFiles = fs.gitTracked ./.;
   pytoml = builtins.fromTOML (builtins.readFile ./pyproject.toml);
   version = pytoml.tool.poetry.version;
+  destdir = "/opt/hackman";
 in
 stdenv.mkDerivation {
   pname = "hackman";
@@ -46,27 +48,32 @@ stdenv.mkDerivation {
     libusb1
     libudev-zero
     poetry
+    docker
   ];
 
-  installPhase = ''
+  buildPhase = ''
     # Build python package
-    mkdir -p /opt/hackman/pypoetry
-    poetry config cache-dir /opt/hackman/pypoetry
+    mkdir -p ${destdir}/pypoetry
+    poetry config cache-dir ${destdir}/pypoetry
     poetry install --no-interaction --no-root --only main
     venvpath=`poetry env info -p`
-    mkdir -p $out/opt/hackman
 
     # Generate Django static files
     env DJANGO_SETTINGS_MODULE=hackman.settings_prod hackman-manage collectstatic
 
+    # Create symlinks of binaries
+    mkdir -p ${destdir}/bin
+    for bin in $venvpath/bin/dsl* $venvpath/bin/hackman*; do
+      ln -s $venvpath/bin/$(basename $bin) ${destdir}/bin/$(basename $bin)
+    done
+  '';
+
+  installPhase = ''
     # Copy built package
-    cp -r /opt/hackman/pypoetry $out/opt/hackman/
+    cp -r build/pypoetry $out/${destdir}/
 
     # Create symlinks to all binaries starting with hackman* or dsl* in /usr/bin
     mkdir -p $out/usr/bin
-    for bin in $venvpath/bin/dsl* $venvpath/bin/hackman*; do
-      ln -s $venvpath/bin/$(basename $bin) $out/usr/bin/$(basename $bin)
-    done
 
     # Copy systemd units
     mkdir -p $out/lib/systemd
@@ -77,6 +84,6 @@ stdenv.mkDerivation {
     cp -rv udev $out/lib/udev/rules.d
 
     # Copy nginx configuration
-    cp -rv nginx $out/opt/hackman/nginx
+    cp -rv nginx $out/${destdir}/nginx
   '';
 }

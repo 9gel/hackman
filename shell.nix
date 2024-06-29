@@ -1,7 +1,7 @@
 let
-  pkgs = import ./pkgs.nix;
-  hackman = pkgs.callPackage ./hackman.nix { };
-  icat = pkgs.callPackage ./icat.nix { };
+  pkgs = import ./nix/pkgs.nix;
+  hackman = pkgs.callPackage ./nix/hackman.nix { };
+  icat = pkgs.callPackage ./nix/icat.nix { };
   devPkgs = with pkgs; [
     # Packages only for development use. All other necessary packages
     # for hackman should go to hackman.nix or pyproject.toml
