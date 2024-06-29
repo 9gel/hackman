@@ -1,17 +1,38 @@
-{ pkgs ? import <nixpkgs> { } }:
 let
-  pythonEnv = pkgs.python39.withPackages(_: []);
+  pkgs = import ./pkgs.nix;
+  hackman = pkgs.callPackage ./hackman.nix { };
+  icat = pkgs.callPackage ./icat.nix { };
+  devPkgs = with pkgs; [
+    # Packages only for development use. All other necessary packages
+    # for hackman should go to hackman.nix or pyproject.toml
+    cowsay
+    lolcat
+  ];
+
 in
+
 pkgs.mkShell {
-  packages = [
-    pkgs.poetry
-    pythonEnv
+  packages = hackman.buildInputs ++ icat.buildInputs ++ devPkgs ++ [ icat ];
 
-    pkgs.redis
-    pkgs.postgresql
+  GREETING = "WELCOME TO HACKMAN";
+  shellHook = ''
+    echo '$the_cow = <<EOC;' > /tmp/bao.cow
+    echo ' $thoughts' >> /tmp/bao.cow
+    echo '  $thoughts' >> /tmp/bao.cow
+    icat -w 28 hackman/static/screen/dsl-logo-bao.png >> /tmp/bao.cow
+    echo ' ' >> /tmp/bao.cow
+    echo 'EOC' >> /tmp/bao.cow
+    if [ $(($RANDOM%2)) -eq 0 ]; then
+      echo "$GREETING" | cowsay -f /tmp/bao.cow | lolcat
+    else
+      echo "$GREETING" | cowsay -f /tmp/bao.cow
+    fi
+    rm /tmp/bao.cow
+  '';
 
-    pkgs.hivemind  # Run Procfile
-
-    pkgs.fpm
+  lib-path = with pkgs; lib.makeLibraryPath [
+    libffi
+    openssl
+    stdenv.cc.cc
   ];
 }
