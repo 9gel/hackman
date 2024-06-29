@@ -1,5 +1,5 @@
 {
-  description = "raspberry-pi-nix example";
+  description = "Hackman raspberry pi NixOS example";
   nixConfig = {
     extra-substituters = [ "https://raspberry-pi-nix.cachix.org" ];
     extra-trusted-public-keys = [
@@ -23,6 +23,10 @@
         systemd.services.sshd.wantedBy = pkgs.lib.mkForce [ "multi-user.target" ];
         nix.settings.experimental-features = [ "nix-command" "flakes" ];
 	programs.direnv.enable = true;
+        virtualisation.docker = {
+          enable = true;
+          enableOnBoot = false;  # only start when needed
+        };
         environment = {
           systemPackages = with pkgs; [ vim curl bluez bluez-tools networkmanager ];
         };
@@ -36,7 +40,8 @@
           users.pi = {
             isNormalUser = true;
             extraGroups = ["wheel" "adm" "dialout" "cdrom" "sudo" "audio" "video"
-                           "plugdev" "games" "users" "input" "render" "netdev" "gpio" "i2c" "spi"];
+                           "plugdev" "games" "users" "input" "render" "netdev"
+                           "gpio" "i2c" "spi" "docker"];
             openssh.authorizedKeys.keys = [
               "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCqt4IWvAz6nSP/ayD2psouqtffu7O8ZMs5RoCsKtsG3KTTm/RWwDAcrWP1QrWVlbz/QWpjB6mt6z8rnTC3Q4r9/o0k4TShlypnWt901LHMPB67oVi4H8EZD7hJOk/G+dfVhwlEw4kRb2j2zJFqlokDF9wPwgT7baOYL5kq+hCXoKgelYS2wMScPP4hs3iHli+fQbcAf/Dd36Q7s4c5CQqZsmTbS+LcprhElRl1W3W8vjel3S3Zuzua94GJNnsZE2P7/DLf1EdjMrNTb+w3RSVKT7XihV8obAMlw5p4/ssUvcAnTWRVpftvXLxdTZDhodW3ewmxmTdBrSbpd/DsJIfdIgGeWlLCB9drCoR8oLPD69iuWfz9HHuuZsC5Ic7/H9hBWT92Fn0E0hE/FFNF6FNaZdd3/Occ5hObIyZPz+DsrQemzP/pn4A7/ahxHfrFd1qfLZSU6yclvgoJZDuiWIkPmVjH50rjbiqoKplm3a4ahGggVltWI19CjYmG5IF1xeU= me@example.lan"
             ];
