@@ -2,7 +2,7 @@
 {
   stdenv,
   lib,
-  python311,
+  python-to-use,
   libffi,
   openssl,
   readline,
@@ -18,9 +18,10 @@
 }:
 
 let
+  root = ./..;
   fs = lib.fileset;
-  sourceFiles = fs.gitTracked ./.;
-  pytoml = builtins.fromTOML (builtins.readFile ./pyproject.toml);
+  sourceFiles = fs.gitTracked root;
+  pytoml = builtins.fromTOML (builtins.readFile ../pyproject.toml);
   version = pytoml.tool.poetry.version;
 in
 stdenv.mkDerivation {
@@ -28,12 +29,12 @@ stdenv.mkDerivation {
   version = version;
 
   src = fs.toSource {
-    root = ./.;
+    root = root;
     fileset = sourceFiles;
   };
 
   buildInputs = [
-    python311
+    python-to-use
     libffi
     openssl
     readline

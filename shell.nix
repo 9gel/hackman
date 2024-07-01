@@ -1,38 +1,51 @@
 let
-  pkgs = import ./pkgs.nix;
-  hackman = pkgs.callPackage ./hackman.nix { };
-  icat = pkgs.callPackage ./icat.nix { };
+  GREETING = "WELCOME TO HACKMAN";
+
+  pkgs = import nix/pkgs.nix;
+
+  hackman = pkgs.callPackage nix/hackman.nix { };
+  icat = pkgs.callPackage nix/icat.nix { };
+
   devPkgs = with pkgs; [
     # Packages only for development use. All other necessary packages
     # for hackman should go to hackman.nix or pyproject.toml
     cowsay
     lolcat
+    niv
   ];
 
 in
 
 pkgs.mkShell {
-  packages = hackman.buildInputs ++ icat.buildInputs ++ devPkgs ++ [ icat ];
+  packages = hackman.buildInputs ++ devPkgs ++ [ icat ];
 
-  GREETING = "WELCOME TO HACKMAN";
+  preShellHook = hackman.configurePhase or null;
+
   shellHook = ''
-    echo '$the_cow = <<EOC;' > /tmp/bao.cow
-    echo ' $thoughts' >> /tmp/bao.cow
-    echo '  $thoughts' >> /tmp/bao.cow
-    icat -w 28 hackman/static/screen/dsl-logo-bao.png >> /tmp/bao.cow
-    echo ' ' >> /tmp/bao.cow
-    echo 'EOC' >> /tmp/bao.cow
-    if [ $(($RANDOM%2)) -eq 0 ]; then
-      echo "$GREETING" | cowsay -f /tmp/bao.cow | lolcat
-    else
-      echo "$GREETING" | cowsay -f /tmp/bao.cow
-    fi
-    rm /tmp/bao.cow
+    runHook preShellHook
+
+    # enable poetry and enter virtual environment
+    export POETRY_CACHE_DIR="$PWD/.cache"
+    poetry env use "${pkgs.python-to-use.outPath}/bin/python"
+    poetry install --no-interaction --no-root
+    source $(poetry env info --path)/bin/activate
+
+    runHook postShellHook
   '';
 
-  lib-path = with pkgs; lib.makeLibraryPath [
-    libffi
-    openssl
-    stdenv.cc.cc
-  ];
+  postShellHook = ''
+    baofile=/tmp/bao-$(whoami)-$(date +%s)
+    echo '$the_cow = <<EOC;' > "$baofile"
+    echo ' $thoughts' >> "$baofile"
+    echo '  $thoughts' >> "$baofile"
+    icat -w 28 hackman/static/screen/dsl-logo-bao.png >> "$baofile"
+    echo ' ' >> "$baofile"
+    echo 'EOC' >> "$baofile"
+    if [ $(($RANDOM%2)) -eq 0 ]; then
+      echo "${GREETING}" | cowsay -f "$baofile" | lolcat
+    else
+      echo "${GREETING}" | cowsay -f "$baofile"
+    fi
+    rm "$baofile"
+  '';
 }
