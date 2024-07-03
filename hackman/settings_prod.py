@@ -34,7 +34,7 @@ def _gen_key() -> str:
 
 SECRET_KEY = _gen_key()
 
-STATIC_ROOT = "/opt/hackman/static"
+STATIC_ROOT = "__static_root__"  # to be replaced by build process
 
 # RFID reader config
 RFID_READER = {
@@ -58,7 +58,7 @@ DATABASES = {
     }
 }
 
-DB_DIR = "/var/lib/hackman/db"  # Temporary files such as payment json
+DB_DIR = "/tmp/hackman/db"  # Temporary files such as payment json
 
 # Door lock config
 DOOR_LOCK = {

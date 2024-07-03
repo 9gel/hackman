@@ -26,6 +26,7 @@
         services = {
           openssh.enable = true;
           avahi = {
+            nssmdns = true;
             enable = true;
           };
         };
@@ -61,7 +62,7 @@
         };
         nix.settings.experimental-features = [ "nix-command" "flakes" ];
         environment = {
-          systemPackages = with pkgs; [ vim curl bluez bluez-tools ];
+          systemPackages = with pkgs; [ vim curl bluez bluez-tools unzip dig ];
         };
         hardware = {
           bluetooth.enable = true;

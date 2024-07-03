@@ -1,4 +1,8 @@
 let
-  pkgs = import ./pkgs.nix;
+  pkgs = import ./nix/pkgs.nix;
 in
-pkgs.callPackage ./hackman.nix { }
+{
+  hackman = pkgs.callPackage ./nix/hackman.nix { };
+  buildPyPkgs = pkgs.callPackage ./nix/buildPyPkgs.nix { };
+  downloadPyPkgs = pkgs.callPackage ./nix/downloadPyPkgs.nix { };
+}

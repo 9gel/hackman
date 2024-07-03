@@ -1,83 +1,61 @@
-# Complete hackman build
+/*
+  Only build the Hackman package here. Do not access the internet while doing so.
+  See comments in downloadPyPkgs.nix.
+*/
 {
+  pkgs,
   stdenv,
   lib,
+
   python-to-use,
-  libffi,
-  openssl,
-  readline,
-  redis,
-  postgresql,
-  sqlite,
-  bzip2,
-  systemd,
-  fpm,
-  libusb1,
-  libudev-zero,
+
   poetry,
 }:
 
 let
   root = ./..;
+  projectDef = (builtins.fromTOML (builtins.readFile ../pyproject.toml));
+  projectGit = fetchGit ./..;
+
   fs = lib.fileset;
-  sourceFiles = fs.gitTracked root;
-  pytoml = builtins.fromTOML (builtins.readFile ../pyproject.toml);
-  version = pytoml.tool.poetry.version;
+  srcFiles = fs.unions [ (fs.gitTracked root) ];
+
+  buildPyPkgs = pkgs.callPackage ./buildPyPkgs.nix { };
 in
+
 stdenv.mkDerivation {
   pname = "hackman";
-  version = version;
+  version = "${projectDef.tool.poetry.version}-${projectGit.shortRev}";
+  src = fs.toSource { root = root; fileset = srcFiles; };
 
-  src = fs.toSource {
-    root = root;
-    fileset = sourceFiles;
-  };
+  nativeBuildInputs = [ python-to-use poetry ];
+  buildInputs = [ python-to-use buildPyPkgs ];
 
-  buildInputs = [
-    python-to-use
-    libffi
-    openssl
-    readline
-    redis
-    postgresql
-    sqlite
-    bzip2
-    systemd
-    fpm
-    libusb1
-    libudev-zero
-    poetry
-  ];
+  buildPhase = ''
+    runHook preBuild
+
+    runHook postBuild
+  '';
 
   installPhase = ''
-    # Build python package
-    mkdir -p /opt/hackman/pypoetry
-    poetry config cache-dir /opt/hackman/pypoetry
-    poetry install --no-interaction --no-root --only main
-    venvpath=`poetry env info -p`
-    mkdir -p $out/opt/hackman
+    runHook preInstall
 
-    # Generate Django static files
-    env DJANGO_SETTINGS_MODULE=hackman.settings_prod hackman-manage collectstatic
+    # Link over the static directory
+    ln -s ${buildPyPkgs}/static static
 
-    # Copy built package
-    cp -r /opt/hackman/pypoetry $out/opt/hackman/
-
-    # Create symlinks to all binaries starting with hackman* or dsl* in /usr/bin
-    mkdir -p $out/usr/bin
-    for bin in $venvpath/bin/dsl* $venvpath/bin/hackman*; do
-      ln -s $venvpath/bin/$(basename $bin) $out/usr/bin/$(basename $bin)
+    # Create symlinks to all binaries starting with hackman* or dsl* in bin dir
+    VENVPATH="$(cat ${buildPyPkgs}/venv_path)"
+    BINPATH=$out/bin
+    mkdir -p $BINPATH
+    for bin in $VENVPATH/bin/dsl* $VENVPATH/bin/hackman*; do
+      ln -s $VENVPATH/bin/$(basename $bin) $BINPATH/$(basename $bin)
     done
 
-    # Copy systemd units
-    mkdir -p $out/lib/systemd
-    cp -rv systemd $out/lib/systemd/system
+    # Install systemd, udev and nginx rules
+    install -Dt $out/lib/systemd systemd/*
+    install -Dt $out/lib/udev/rules.d udev/*
+    install -Dt $out/lib/nginx/sites-enabled nginx/*
 
-    # Copy udev units
-    mkdir -p $out/lib/udev
-    cp -rv udev $out/lib/udev/rules.d
-
-    # Copy nginx configuration
-    cp -rv nginx $out/opt/hackman/nginx
+    runHook postInstall
   '';
 }

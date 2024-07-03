@@ -6,29 +6,30 @@ let
   hackman = pkgs.callPackage nix/hackman.nix { };
   icat = pkgs.callPackage nix/icat.nix { };
 
-  devPkgs = with pkgs; [
+  devPkgs = [ icat ] ++ (with pkgs; [
     # Packages only for development use. All other necessary packages
     # for hackman should go to hackman.nix or pyproject.toml
     cowsay
     lolcat
     niv
-  ];
-
+    usbutils
+  ]);
 in
 
 pkgs.mkShell {
-  packages = hackman.buildInputs ++ devPkgs ++ [ icat ];
+  packages = devPkgs;
+  inputsFrom = [ hackman ];
 
   preShellHook = hackman.configurePhase or null;
+  postConfigure = hackman.postConfigure or null;
 
   shellHook = ''
     runHook preShellHook
 
     # enable poetry and enter virtual environment
-    export POETRY_CACHE_DIR="$PWD/.cache"
-    poetry env use "${pkgs.python-to-use.outPath}/bin/python"
-    poetry install --no-interaction --no-root
+    poetry env use "${pkgs.python-to-use}/bin/python"
     source $(poetry env info --path)/bin/activate
+    poetry install --no-interaction
 
     runHook postShellHook
   '';
