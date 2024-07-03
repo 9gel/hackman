@@ -3,12 +3,12 @@ let
 
   pkgs = import nix/pkgs.nix;
 
-  hackman = pkgs.callPackage nix/hackman.nix { };
+  buildPyPkgs = pkgs.callPackage nix/buildPyPkgs.nix { };
   icat = pkgs.callPackage nix/icat.nix { };
 
   devPkgs = [ icat ] ++ (with pkgs; [
     # Packages only for development use. All other necessary packages
-    # for hackman should go to hackman.nix or pyproject.toml
+    # for Hackman should go to pyproject.toml, buildPyPkgs.nix or hackman.nix
     cowsay
     lolcat
     niv
@@ -18,10 +18,10 @@ in
 
 pkgs.mkShell {
   packages = devPkgs;
-  inputsFrom = [ hackman ];
+  inputsFrom = [ buildPyPkgs ];
 
-  preShellHook = hackman.configurePhase or null;
-  postConfigure = hackman.postConfigure or null;
+  preShellHook = buildPyPkgs.configurePhase or null;
+  postConfigure = buildPyPkgs.postConfigure or null;
 
   shellHook = ''
     runHook preShellHook
