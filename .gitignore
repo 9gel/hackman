@@ -1,9 +1,11 @@
 .venv
 __pycache__
 db.sqlite3
-.cache
+.poetry
 .coverage
 hackman/static/admin
+result
+*.swp
 
 # compiled objects
 *.pyc
