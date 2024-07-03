@@ -104,17 +104,18 @@ stdenv.mkDerivation {
       install --no-cache-dir --no-index -f ${downloadPyPkgs}/pypkgs setuptools
 
     # Parallelize
-    splits=10
+    splits=40
+    workers=4
     lines=$(($(wc -l requirements.txt | awk '{print $1}') / $splits + 1))
     split -l$lines -d -a4 --additional-suffix=.txt requirements.txt requirements
 
     # Build and install dependent python package
-    ls requirements0*.txt | xargs --max-args=1 --max-procs=4 \
+    ls requirements0*.txt | xargs --max-args=1 --max-procs=$workers \
       poetry run pip --disable-pip-version-check --require-virtualenv --no-color \
         install --no-cache-dir --no-index -f ${downloadPyPkgs}/pypkgs -r
 
     # Replace hackman paths to nix friendly before they get installed
-    sed -ie 's|"__static_root__"|os.path.dirname(os.path.realpath(__file__))+"/../static"|' hackman/settings_prod.py
+    sed -ie 's|"__static_root__"|os.path.dirname(os.path.realpath(__file__))+"/../../../../../../static"|' hackman/settings_prod.py
 
     # Build and install hackman package
     poetry build --no-ansi -f wheel

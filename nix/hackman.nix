@@ -40,8 +40,10 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
 
+    mkdir -p $out
+
     # Link over the static directory
-    ln -s ${buildPyPkgs}/static static
+    ln -s ${buildPyPkgs}/static $out/static
 
     # Create symlinks to all binaries starting with hackman* or dsl* in bin dir
     VENVPATH="$(cat ${buildPyPkgs}/venv_path)"
