@@ -28,6 +28,10 @@
           avahi = {
             nssmdns = true;
             enable = true;
+            publish = {
+              enable = true;
+              addresses = true;
+            };
           };
         };
         users = {
