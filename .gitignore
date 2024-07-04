@@ -4,7 +4,7 @@ db.sqlite3
 .poetry
 .coverage
 hackman/static/admin
-result
+result*
 *.swp
 
 # compiled objects
