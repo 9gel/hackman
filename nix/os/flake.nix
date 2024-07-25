@@ -15,59 +15,11 @@
     let
       configuration-nix = { config, pkgs, ... }: {
         system.stateVersion = "23.11";
+        nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
         raspberry-pi-nix.uboot.enable = false;
         raspberry-pi-nix.libcamera-overlay.enable = false;
-        time.timeZone = "Asia/Hong_Kong";
-        systemd.services.sshd.wantedBy = pkgs.lib.mkForce [ "multi-user.target" ];
-        virtualisation.docker = {
-          enable = true;
-          enableOnBoot = false;
-        };
-        services = {
-          openssh.enable = true;
-          avahi = {
-            nssmdns = true;
-            enable = true;
-            publish = {
-              enable = true;
-              addresses = true;
-            };
-          };
-        };
-        users = {
-          users.pi = {
-            isNormalUser = true;
-            extraGroups = ["wheel" "adm" "dialout" "cdrom" "sudo" "audio" "video"
-                           "plugdev" "games" "users" "input" "render" "netdev"
-                           "gpio" "i2c" "spi" "docker"];
-            openssh.authorizedKeys.keys = [
-              "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCqt4IWvAz6nSP/ayD2psouqtffu7O8ZMs5RoCsKtsG3KTTm/RWwDAcrWP1QrWVlbz/QWpjB6mt6z8rnTC3Q4r9/o0k4TShlypnWt901LHMPB67oVi4H8EZD7hJOk/G+dfVhwlEw4kRb2j2zJFqlokDF9wPwgT7baOYL5kq+hCXoKgelYS2wMScPP4hs3iHli+fQbcAf/Dd36Q7s4c5CQqZsmTbS+LcprhElRl1W3W8vjel3S3Zuzua94GJNnsZE2P7/DLf1EdjMrNTb+w3RSVKT7XihV8obAMlw5p4/ssUvcAnTWRVpftvXLxdTZDhodW3ewmxmTdBrSbpd/DsJIfdIgGeWlLCB9drCoR8oLPD69iuWfz9HHuuZsC5Ic7/H9hBWT92Fn0E0hE/FFNF6FNaZdd3/Occ5hObIyZPz+DsrQemzP/pn4A7/ahxHfrFd1qfLZSU6yclvgoJZDuiWIkPmVjH50rjbiqoKplm3a4ahGggVltWI19CjYmG5IF1xeU= me@example.lan"
-            ];
-          };
-        };
-        security.sudo.extraRules = [{
-          users = [ "pi" ];
-          commands = [{
-            command = "ALL";
-            options = [ "NOPASSWD" ];
-          }];
-        }];
-        networking = {
-          hostName = "hackman";
-          networkmanager = {
-            enable = true;
-          };
-          interfaces.end0.useDHCP = true; 
-          wireless.networks = {
-            dsl = {
-              psk = "0xdeadbeef";
-            };
-          };
-        };
-        nix.settings.experimental-features = [ "nix-command" "flakes" ];
-        environment = {
-          systemPackages = with pkgs; [ vim curl bluez bluez-tools unzip dig ];
-        };
+
         hardware = {
           bluetooth.enable = true;
           raspberry-pi = {
@@ -116,6 +68,10 @@
                     enable = true;
                     value = "on";
                   };
+                  i2c = {
+                    enable = true;
+                    value = "on";
+                  };
                   audio = {
                     enable = true;
                     value = "on";
@@ -141,6 +97,67 @@
             };
           };
         };
+
+        time.timeZone = "Asia/Hong_Kong";
+
+        networking = {
+          hostName = "hackman";
+          networkmanager = {
+            enable = true;
+          };
+          interfaces.end0.useDHCP = true;
+          wireless.networks = {
+            dsl = {
+              psk = "0xdeadbeef";
+            };
+          };
+        };
+
+        systemd.services.sshd.wantedBy = pkgs.lib.mkForce [ "multi-user.target" ];
+        services = {
+          openssh.enable = true;
+          avahi = {
+            nssmdns = true;
+            enable = true;
+            publish = {
+              enable = true;
+              addresses = true;
+            };
+          };
+        };
+        virtualisation.docker = {
+          enable = true;
+          enableOnBoot = false;
+        };
+
+        environment = {
+          systemPackages = with pkgs; [
+            vim curl wget dig git unzip p7zip home-manager
+          ];
+        };
+        programs = {
+          zsh.enable = true;
+        };
+
+        users = {
+          users.pi = {
+            isNormalUser = true;
+            extraGroups = ["wheel" "adm" "dialout" "cdrom" "sudo" "audio" "video"
+                           "plugdev" "games" "users" "input" "render" "netdev"
+                           "gpio" "i2c" "spi" "docker"];
+            openssh.authorizedKeys.keys = [
+              "ssh-rsa AABBCCDDEE00998877665544332211 me@example.lan"
+            ];
+          };
+        };
+        security.sudo.extraRules = [{
+          users = [ "pi" ];
+          commands = [{
+            command = "ALL";
+            options = [ "NOPASSWD" ];
+          }];
+        }];
+
       };
 
     in
